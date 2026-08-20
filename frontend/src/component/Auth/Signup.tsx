@@ -40,7 +40,12 @@ const Signup: React.FC = () => {
       // Send user object in body, role as query param
       await axios.post(
         `${API_BASE_URL}/auth/register?role=${encodeURIComponent(role)}`,
-        userData
+        userData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       )
       navigate("/login")
     } catch (err: any) {

@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .anyRequest().permitAll()
                 );
@@ -36,10 +37,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        // 1. Set credentials to false when using wildcard pattern '*'
+        // 1. Must be set to false when using wildcards for allowed origins
         config.setAllowCredentials(false);
 
-        // 2. Allow requests from localhost AND Vercel / any frontend domain
+        // 2. Allow requests from both Localhost AND Vercel deployment URLs
         config.setAllowedOriginPatterns(Arrays.asList("*"));
 
         config.setAllowedHeaders(Arrays.asList("*"));
@@ -47,7 +48,7 @@ public class SecurityConfig {
 
         source.registerCorsConfiguration("/**", config);
         FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-        bean.setOrder(Ordered.HIGHEST_PRECEDENCE); // Executes BEFORE Spring Security
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return bean;
     }
 }
