@@ -1,25 +1,22 @@
-import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useSelector } from "react-redux"
-import axios from "axios"
-import type { RootState } from "../../redux/store"
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import type { RootState } from "../../redux/store";
 
-// 1. Define the User interface locally
 interface User {
-  id?: string
-  _id?: string
-  email: string
-  role: string
-  name?: string
-  username?: string
+  id?: string;
+  _id?: string;
+  email: string;
+  role: string;
+  name?: string;
+  username?: string;
 }
 
 const PostJob: React.FC = () => {
-  const navigate = useNavigate()
-  const token = useSelector((state: RootState) => state.auth?.token) || localStorage.getItem("token")
-
-  // Explicitly cast user to the User interface
-  const user = useSelector((state: RootState) => state.auth?.user) as User | null
+  const navigate = useNavigate();
+  const token = useSelector((state: RootState) => state.auth?.token) || localStorage.getItem("token");
+  const user = useSelector((state: RootState) => state.auth?.user) as User | null;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -28,61 +25,68 @@ const PostJob: React.FC = () => {
     salary: "",
     skills: "",
     deadline: "",
-  })
+  });
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    // Fall back to localStorage if Redux state clears on refresh
-    const userId = user?.id || user?._id || localStorage.getItem("userId")
-    const userEmail = user?.email || localStorage.getItem("userEmail") || ""
-    const username = user?.username || user?.name || userEmail
+    const userId = user?.id || user?._id || localStorage.getItem("userId") || "";
+    const userEmail = user?.email || localStorage.getItem("userEmail") || "";
+    const username = user?.username || user?.name || userEmail;
 
-    if (!userId) {
-      setError("User session invalid. Please log in again.")
-      setLoading(false)
-      return
-    }
+    const payload = {
+      ...formData,
+      employerId: userId,
+      userId: userId,
+      postedBy: userEmail,
+      employerEmail: userEmail,
+      skills: formData.skills.split(",").map((s) => s.trim()),
+    };
+
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+    const headers = {
+      Authorization: token ? `Bearer ${token}` : "",
+      "Content-Type": "application/json",
+      userId: String(userId),
+      username: String(username),
+    };
 
     try {
-      const payload = {
-        ...formData,
-        employerId: userId,
-        postedBy: userEmail,
-        skills: formData.skills.split(",").map((s) => s.trim()),
+      // Primary POST endpoint attempt
+      await axios.post(`${API_BASE_URL}/jobs`, payload, { headers });
+      navigate("/jobs");
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        try {
+          // Fallback endpoint if /jobs return 404
+          await axios.post(`${API_BASE_URL}/api/jobs`, payload, { headers });
+          navigate("/jobs");
+          return;
+        } catch (fallbackErr: any) {
+          console.error("POST fallback failed:", fallbackErr);
+        }
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
-
-      await axios.post(`${API_BASE_URL}/jobs`, payload, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-          userId: String(userId),
-          username: String(username),
-        },
-      })
-
-      navigate("/jobs")
-    } catch (err: any) {
       setError(
-        err.response?.data?.message || err.response?.data || "Failed to post job."
-      )
+        err.response?.data?.message ||
+        (typeof err.response?.data === "string" ? err.response?.data : "Failed to post job. Check server endpoints.")
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div
@@ -275,7 +279,7 @@ const PostJob: React.FC = () => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PostJob
+export default PostJob;

@@ -26,32 +26,52 @@ const JobList: React.FC = () => {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string>("");
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/jobs`)
-      .then((res) => {
-        setJobs(res.data);
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        // First try standard /jobs endpoint
+        const response = await axios.get(`${API_BASE_URL}/jobs`);
+        setJobs(Array.isArray(response.data) ? response.data : response.data.jobs || []);
+      } catch (err: any) {
+        console.warn("GET /jobs failed, attempting fallback to /api/jobs...", err);
+        try {
+          // Fallback if backend controller uses /api/jobs prefix
+          const fallbackRes = await axios.get(`${API_BASE_URL}/api/jobs`);
+          setJobs(Array.isArray(fallbackRes.data) ? fallbackRes.data : fallbackRes.data.jobs || []);
+        } catch (fallbackErr: any) {
+          console.error("Failed to fetch jobs from both endpoints:", fallbackErr);
+          setFetchError("Unable to load jobs from server.");
+        }
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch jobs:", err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchJobs();
   }, [API_BASE_URL]);
 
   const employerJobs = jobs.filter((job) => {
     const currentEmail = (userEmail || "").trim().toLowerCase();
+    const currentId = String(userId || "").trim();
 
-    // Extract all possible email fields from backend job object
-    const jobEmail = (job.postedBy || job.employerEmail || job.email || "").trim().toLowerCase();
+    const jobEmail = (
+      job.postedBy ||
+      job.employerEmail ||
+      job.email ||
+      ""
+    ).trim().toLowerCase();
 
-    // Extract all possible ID fields
-    const jobId = String(job.employerId || job.userId || job.postedBy || "");
-    const currentId = String(userId || "");
+    const jobId = String(
+      job.employerId ||
+      job.userId ||
+      ""
+    ).trim();
 
     const matchesEmail = currentEmail !== "" && jobEmail === currentEmail;
-    const matchesId = currentId !== "null" && currentId !== "" && jobId === currentId;
+    const matchesId = currentId !== "" && currentId !== "null" && jobId === currentId;
 
     return matchesEmail || matchesId;
   });
@@ -93,12 +113,18 @@ const JobList: React.FC = () => {
               </button>
             </div>
 
+            {fetchError && (
+              <div style={{ padding: "1rem", backgroundColor: "#fee2e2", color: "#991b1b", borderRadius: "8px", marginBottom: "1rem" }}>
+                ⚠️ {fetchError}
+              </div>
+            )}
+
             {loading ? (
               <p style={{ textAlign: "center", color: "#6b7280" }}>Loading your listings...</p>
             ) : employerJobs.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {employerJobs.map((job) => {
-                  const jobId = job.id || job._id;
+                {employerJobs.map((job, index) => {
+                  const jobId = job.id || job._id || `job-${index}`;
                   return (
                     <div
                       key={jobId}
@@ -123,22 +149,20 @@ const JobList: React.FC = () => {
                           {job.description}
                         </p>
                       </div>
-                      {jobId && (
-                        <Link
-                          to={`/job/${jobId}`}
-                          style={{
-                            backgroundColor: "#6366f1",
-                            color: "#ffffff",
-                            padding: "0.5rem 1rem",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontWeight: "500",
-                            fontSize: "0.875rem",
-                          }}
-                        >
-                          View Details
-                        </Link>
-                      )}
+                      <Link
+                        to={`/job/${job.id || job._id || ""}`}
+                        style={{
+                          backgroundColor: "#6366f1",
+                          color: "#ffffff",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "6px",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        View Details
+                      </Link>
                     </div>
                   );
                 })}
@@ -184,8 +208,8 @@ const JobList: React.FC = () => {
               <p style={{ textAlign: "center", color: "#6b7280" }}>Fetching available jobs...</p>
             ) : jobs.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {jobs.map((job) => {
-                  const jobId = job.id || job._id;
+                {jobs.map((job, index) => {
+                  const jobId = job.id || job._id || `job-${index}`;
                   return (
                     <div
                       key={jobId}
@@ -210,22 +234,20 @@ const JobList: React.FC = () => {
                           {job.description}
                         </p>
                       </div>
-                      {jobId && (
-                        <Link
-                          to={`/job/${jobId}`}
-                          style={{
-                            backgroundColor: "#6366f1",
-                            color: "#ffffff",
-                            padding: "0.5rem 1rem",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontWeight: "500",
-                            fontSize: "0.875rem",
-                          }}
-                        >
-                          View Details
-                        </Link>
-                      )}
+                      <Link
+                        to={`/job/${job.id || job._id || ""}`}
+                        style={{
+                          backgroundColor: "#6366f1",
+                          color: "#ffffff",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "6px",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        View Details
+                      </Link>
                     </div>
                   );
                 })}
