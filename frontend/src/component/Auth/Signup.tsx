@@ -43,25 +43,24 @@ const Signup: React.FC = () => {
         userData
       )
       navigate("/login")
-    } } catch (err: any) {
-        console.error("Signup failed:", err.response?.data || err)
+    } catch (err: any) {
+      console.error("Signup failed:", err.response?.data || err)
 
-        let errorMessage = "Registration failed. Please check your inputs."
+      let errorMessage = "Registration failed. Please check your inputs."
 
-        if (err.response?.data) {
-          const data = err.response.data
-          if (typeof data === "string") {
-            errorMessage = data
-          } else if (typeof data === "object") {
-            errorMessage = data.message || data.error || JSON.stringify(data)
-          }
-        } else if (err.message) {
-          errorMessage = err.message
+      if (err.response?.data) {
+        const data = err.response.data
+        if (typeof data === "string") {
+          errorMessage = data
+        } else if (typeof data === "object") {
+          errorMessage = data.message || data.error || JSON.stringify(data)
         }
-
-        setError(String(errorMessage))
+      } else if (err.message) {
+        errorMessage = err.message
       }
-       finally {
+
+      setError(String(errorMessage))
+    } finally {
       setLoading(false)
     }
   }
