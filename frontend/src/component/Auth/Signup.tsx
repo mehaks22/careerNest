@@ -5,7 +5,6 @@ import axios from "axios"
 const Signup: React.FC = () => {
   const navigate = useNavigate()
 
-  // Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   const [formData, setFormData] = useState({
@@ -34,15 +33,33 @@ const Signup: React.FC = () => {
     setLoading(true)
     setError("")
 
+    // Separate role from user body since backend receives role as @RequestParam
+    const { role, ...userData } = formData
+
     try {
-      await axios.post(`${API_BASE_URL}/auth/register`, formData)
+      // Send user object in body, role as query param
+      await axios.post(
+        `${API_BASE_URL}/auth/register?role=${encodeURIComponent(role)}`,
+        userData
+      )
       navigate("/login")
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Registration failed. Please check your inputs."
-      )
+      console.error("Signup failed:", err.response?.data)
+
+      const rawError = err.response?.data
+
+      // Fix for React Error #31: Guarantee setError only receives a string
+      let errorMessage = "Registration failed. Please check your inputs."
+
+      if (typeof rawError === "string") {
+        errorMessage = rawError
+      } else if (typeof rawError === "object" && rawError !== null) {
+        errorMessage = rawError.message || rawError.error || JSON.stringify(rawError)
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
