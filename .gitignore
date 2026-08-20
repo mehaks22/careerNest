@@ -1,0 +1,14 @@
+node_modules/ 
+target/ 
+build/ 
+.env 
+.DS_Store 
+Thumbs.db
+# Resume files
+*.pdf
+*.doc
+*.docx
+*.txt
+resume/
+resumes/
+uploads/
