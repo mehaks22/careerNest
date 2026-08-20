@@ -51,6 +51,10 @@ const Login: React.FC = () => {
 
       // Dispatch normalized state
       dispatch(login({ token, user }))
+      // Save values to localStorage so JobList.tsx can read them immediately
+      localStorage.setItem("userRole", user.role)
+      localStorage.setItem("userEmail", user.email)
+      if (token) localStorage.setItem("token", token)
 
       // Redirect both roles appropriately
       navigate("/jobs")
