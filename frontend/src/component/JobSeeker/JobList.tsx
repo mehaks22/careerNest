@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const Jobs: React.FC = () => {
-  const navigate = useNavigate()
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+const JobList: React.FC = () => {  // 👈 Ensure this exact declaration is present
+  const [jobs, setJobs] = useState([]);
+  const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  const userRole = localStorage.getItem("userRole") // Retrieve stored role
-  const [jobs, setJobs] = useState([])
+  const userRole = localStorage.getItem("userRole");
 
   useEffect(() => {
     if (userRole !== "EMPLOYER") {
       axios.get(`${API_BASE_URL}/api/jobs`)
         .then(res => setJobs(res.data))
-        .catch(err => console.error(err))
+        .catch(err => console.error(err));
     }
-  }, [userRole])
+  }, [userRole]);
 
-  // Restrict view for Employers
   if (userRole === "EMPLOYER") {
     return (
       <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
@@ -34,15 +33,15 @@ const Jobs: React.FC = () => {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div>
+    <div style={{ padding: "2rem" }}>
       <h1>Available Job Opportunities</h1>
-      {/* Existing Job Seeker list rendering */}
+      {/* Map over jobs state here */}
     </div>
-  )
-}
+  );
+};
 
-export default JobList
+export default JobList;
