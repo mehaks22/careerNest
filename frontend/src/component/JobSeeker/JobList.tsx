@@ -2,13 +2,18 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
+// 1. Updated interface to include all potential owner key variations
 interface Job {
-  id: string;
+  id?: string;
+  _id?: string;
   title: string;
   location: string;
   salary: string;
   description: string;
   postedBy?: string;
+  employerId?: string;
+  employerEmail?: string;
+  userId?: string;
 }
 
 const JobList: React.FC = () => {
@@ -16,7 +21,8 @@ const JobList: React.FC = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
   const userRole = localStorage.getItem("userRole");
-  const userEmail = localStorage.getItem("userEmail"); // Ensure email or ID is stored on login
+  const userEmail = localStorage.getItem("userEmail");
+  const userId = localStorage.getItem("userId");
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -25,6 +31,9 @@ const JobList: React.FC = () => {
     axios
       .get(`${API_BASE_URL}/jobs`)
       .then((res) => {
+        console.log("Logged In User Email:", userEmail);
+        console.log("Logged In User ID:", userId);
+        console.log("Fetched Jobs from Backend:", res.data);
         setJobs(res.data);
         setLoading(false);
       })
@@ -32,10 +41,25 @@ const JobList: React.FC = () => {
         console.error("Failed to fetch jobs:", err);
         setLoading(false);
       });
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, userEmail, userId]);
 
-  // Filter jobs if user is an Employer
-  const employerJobs = jobs.filter((job) => job.postedBy === userEmail);
+  // 2. Multi-key flexible filter matching email or ID
+  const employerJobs = jobs.filter((job) => {
+    const jobOwnerEmail = job.postedBy || job.employerEmail;
+    const jobOwnerId = job.employerId || job.userId;
+
+    const matchesEmail =
+      userEmail && jobOwnerEmail
+        ? String(jobOwnerEmail).toLowerCase() === String(userEmail).toLowerCase()
+        : false;
+
+    const matchesId =
+      userId && jobOwnerId
+        ? String(jobOwnerId) === String(userId)
+        : false;
+
+    return matchesEmail || matchesId;
+  });
 
   return (
     <div style={{ backgroundColor: "#f3f4f6", minHeight: "100vh", padding: "2rem 1rem" }}>
@@ -80,46 +104,49 @@ const JobList: React.FC = () => {
               <p style={{ textAlign: "center", color: "#6b7280" }}>Loading your listings...</p>
             ) : employerJobs.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {employerJobs.map((job) => (
-                  <div
-                    key={job.id}
-                    style={{
-                      backgroundColor: "#ffffff",
-                      borderRadius: "12px",
-                      padding: "1.5rem",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ margin: "0 0 0.5rem 0", color: "#111827", fontSize: "1.25rem" }}>
-                        {job.title}
-                      </h3>
-                      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem" }}>
-                        📍 {job.location} | 💰 {job.salary}
-                      </p>
-                      <p style={{ margin: "0.5rem 0 0 0", color: "#4b5563", fontSize: "0.9rem" }}>
-                        {job.description}
-                      </p>
-                    </div>
-                    <Link
-                      to={`/job/${job.id}`}
+                {employerJobs.map((job) => {
+                  const jobId = job.id || job._id;
+                  return (
+                    <div
+                      key={jobId}
                       style={{
-                        backgroundColor: "#6366f1",
-                        color: "#ffffff",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "6px",
-                        textDecoration: "none",
-                        fontWeight: "500",
-                        fontSize: "0.875rem",
+                        backgroundColor: "#ffffff",
+                        borderRadius: "12px",
+                        padding: "1.5rem",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
-                      View Details
-                    </Link>
-                  </div>
-                ))}
+                      <div>
+                        <h3 style={{ margin: "0 0 0.5rem 0", color: "#111827", fontSize: "1.25rem" }}>
+                          {job.title}
+                        </h3>
+                        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem" }}>
+                          📍 {job.location} | 💰 {job.salary}
+                        </p>
+                        <p style={{ margin: "0.5rem 0 0 0", color: "#4b5563", fontSize: "0.9rem" }}>
+                          {job.description}
+                        </p>
+                      </div>
+                      <Link
+                        to={`/job/${jobId}`}
+                        style={{
+                          backgroundColor: "#6366f1",
+                          color: "#ffffff",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "6px",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div
@@ -163,46 +190,49 @@ const JobList: React.FC = () => {
               <p style={{ textAlign: "center", color: "#6b7280" }}>Fetching available jobs...</p>
             ) : jobs.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    style={{
-                      backgroundColor: "#ffffff",
-                      borderRadius: "12px",
-                      padding: "1.5rem",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ margin: "0 0 0.5rem 0", color: "#111827", fontSize: "1.25rem" }}>
-                        {job.title}
-                      </h3>
-                      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem" }}>
-                        📍 {job.location} | 💰 {job.salary}
-                      </p>
-                      <p style={{ margin: "0.5rem 0 0 0", color: "#4b5563", fontSize: "0.9rem" }}>
-                        {job.description}
-                      </p>
-                    </div>
-                    <Link
-                      to={`/job/${job.id}`}
+                {jobs.map((job) => {
+                  const jobId = job.id || job._id;
+                  return (
+                    <div
+                      key={jobId}
                       style={{
-                        backgroundColor: "#6366f1",
-                        color: "#ffffff",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "6px",
-                        textDecoration: "none",
-                        fontWeight: "500",
-                        fontSize: "0.875rem",
+                        backgroundColor: "#ffffff",
+                        borderRadius: "12px",
+                        padding: "1.5rem",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
-                      View Details
-                    </Link>
-                  </div>
-                ))}
+                      <div>
+                        <h3 style={{ margin: "0 0 0.5rem 0", color: "#111827", fontSize: "1.25rem" }}>
+                          {job.title}
+                        </h3>
+                        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem" }}>
+                          📍 {job.location} | 💰 {job.salary}
+                        </p>
+                        <p style={{ margin: "0.5rem 0 0 0", color: "#4b5563", fontSize: "0.9rem" }}>
+                          {job.description}
+                        </p>
+                      </div>
+                      <Link
+                        to={`/job/${jobId}`}
+                        style={{
+                          backgroundColor: "#6366f1",
+                          color: "#ffffff",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "6px",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div

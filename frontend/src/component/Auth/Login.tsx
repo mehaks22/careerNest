@@ -13,7 +13,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // 1. Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
+  // Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,7 +22,6 @@ const Login: React.FC = () => {
     setError("")
 
     try {
-      // 2. Updated to use API_BASE_URL instead of hardcoded localhost
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email: email,
         username: email,
@@ -51,9 +50,11 @@ const Login: React.FC = () => {
 
       // Dispatch normalized state
       dispatch(login({ token, user }))
+
       // Save values to localStorage so JobList.tsx can read them immediately
       localStorage.setItem("userRole", user.role)
       localStorage.setItem("userEmail", user.email)
+      if (user.id) localStorage.setItem("userId", String(user.id)) // 👈 Added userId saving
       if (token) localStorage.setItem("token", token)
 
       // Redirect both roles appropriately

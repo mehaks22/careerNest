@@ -4,7 +4,7 @@ import { useSelector } from "react-redux"
 import axios from "axios"
 import type { RootState } from "../../redux/store"
 
-// 1. Define the User interface locally to fix TypeScript errors
+// 1. Define the User interface locally
 interface User {
   id?: string
   _id?: string
@@ -16,9 +16,9 @@ interface User {
 
 const PostJob: React.FC = () => {
   const navigate = useNavigate()
-  const token = useSelector((state: RootState) => state.auth?.token)
+  const token = useSelector((state: RootState) => state.auth?.token) || localStorage.getItem("token")
 
-  // 2. Explicitly cast user to the User interface
+  // Explicitly cast user to the User interface
   const user = useSelector((state: RootState) => state.auth?.user) as User | null
 
   const [formData, setFormData] = useState({
@@ -44,8 +44,10 @@ const PostJob: React.FC = () => {
     setLoading(true)
     setError("")
 
-    const userId = user?.id || user?._id
-    const username = user?.username || user?.email || user?.name
+    // Fall back to localStorage if Redux state clears on refresh
+    const userId = user?.id || user?._id || localStorage.getItem("userId")
+    const userEmail = user?.email || localStorage.getItem("userEmail") || ""
+    const username = user?.username || user?.name || userEmail
 
     if (!userId) {
       setError("User session invalid. Please log in again.")
@@ -57,15 +59,15 @@ const PostJob: React.FC = () => {
       const payload = {
         ...formData,
         employerId: userId,
+        postedBy: userEmail,
         skills: formData.skills.split(",").map((s) => s.trim()),
       }
 
-      // 3. Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
       await axios.post(`${API_BASE_URL}/jobs`, payload, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
           "Content-Type": "application/json",
           userId: String(userId),
           username: String(username),
