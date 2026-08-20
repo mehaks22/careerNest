@@ -36,14 +36,18 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
+        // 1. Set credentials to false when using wildcard pattern '*'
+        config.setAllowCredentials(false);
+
+        // 2. Allow requests from localhost AND Vercel / any frontend domain
+        config.setAllowedOriginPatterns(Arrays.asList("*"));
+
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
 
         source.registerCorsConfiguration("/**", config);
         FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-        bean.setOrder(Ordered.HIGHEST_PRECEDENCE); // ◄ Executes BEFORE Spring Security
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE); // Executes BEFORE Spring Security
         return bean;
     }
 }

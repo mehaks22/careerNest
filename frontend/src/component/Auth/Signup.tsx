@@ -43,24 +43,25 @@ const Signup: React.FC = () => {
         userData
       )
       navigate("/login")
-    } catch (err: any) {
-      console.error("Signup failed:", err.response?.data)
+    } } catch (err: any) {
+        console.error("Signup failed:", err.response?.data || err)
 
-      const rawError = err.response?.data
+        let errorMessage = "Registration failed. Please check your inputs."
 
-      // Fix for React Error #31: Guarantee setError only receives a string
-      let errorMessage = "Registration failed. Please check your inputs."
+        if (err.response?.data) {
+          const data = err.response.data
+          if (typeof data === "string") {
+            errorMessage = data
+          } else if (typeof data === "object") {
+            errorMessage = data.message || data.error || JSON.stringify(data)
+          }
+        } else if (err.message) {
+          errorMessage = err.message
+        }
 
-      if (typeof rawError === "string") {
-        errorMessage = rawError
-      } else if (typeof rawError === "object" && rawError !== null) {
-        errorMessage = rawError.message || rawError.error || JSON.stringify(rawError)
-      } else if (err.message) {
-        errorMessage = err.message
+        setError(String(errorMessage))
       }
-
-      setError(errorMessage)
-    } finally {
+       finally {
       setLoading(false)
     }
   }
