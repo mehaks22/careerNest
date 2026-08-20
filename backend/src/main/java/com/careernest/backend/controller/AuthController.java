@@ -21,21 +21,18 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(
-            @RequestBody Map<String, Object> payload,
-            @RequestParam(required = false, defaultValue = "JOB_SEEKER") String role) {
+    public ResponseEntity<?> register(@RequestBody User user) {
         try {
-            // Log to Railway console so you can see exact incoming data
-            System.out.println("Received register payload: " + payload);
-
-            // Convert map or extract fields as needed
-            // User registeredUser = authService.register(...);
-            return ResponseEntity.ok("User registered successfully");
+            // Fallback to JOB_SEEKER if role is not set
+            String role = (user.getRole() != null) ? user.getRole().toString() : "JOB_SEEKER";
+            User registeredUser = authService.register(user, role);
+            return ResponseEntity.ok(registeredUser);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+            String msg = (e.getMessage() != null) ? e.getMessage() : "Registration failed";
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", msg));
         }
     }
+
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginRequest request){

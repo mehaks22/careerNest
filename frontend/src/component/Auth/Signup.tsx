@@ -28,48 +28,39 @@ const Signup: React.FC = () => {
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  setError("")
 
-    // Separate role from user body since backend receives role as @RequestParam
-    const { role, ...userData } = formData
-
-    try {
-      // Pass the entire formData in the POST request body without URL query params
-      await axios.post(
-        `${API_BASE_URL}/auth/register`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      )
-      navigate("/login")
-    }
-    catch (err: any) {
-      console.error("Signup failed:", err.response?.data || err)
-
-      let errorMessage = "Registration failed. Please check your inputs."
-
-      if (err.response?.data) {
-        const data = err.response.data
-        if (typeof data === "string") {
-          errorMessage = data
-        } else if (typeof data === "object") {
-          errorMessage = data.message || data.error || JSON.stringify(data)
-        }
-      } else if (err.message) {
-        errorMessage = err.message
+  try {
+    // Send full formData (including role) inside the JSON payload
+    await axios.post(
+      `${API_BASE_URL}/auth/register`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
+    )
+    navigate("/login")
+  } catch (err: any) {
+    console.error("Signup failed:", err.response?.data || err)
 
-      setError(String(errorMessage))
-    } finally {
-      setLoading(false)
+    let errorMessage = "Registration failed."
+    if (err.response?.data?.message) {
+      errorMessage = err.response.data.message
+    } else if (err.message) {
+      errorMessage = err.message
     }
+
+    setError(String(errorMessage))
+  } finally {
+    setLoading(false)
   }
+}
+
 
   return (
     <div
