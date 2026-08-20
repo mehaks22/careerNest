@@ -5,6 +5,9 @@ import axios from "axios"
 const Signup: React.FC = () => {
   const navigate = useNavigate()
 
+  // Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -32,7 +35,7 @@ const Signup: React.FC = () => {
     setError("")
 
     try {
-      await axios.post("http://localhost:8080/auth/register", formData)
+      await axios.post(`${API_BASE_URL}/auth/register`, formData)
       navigate("/login")
     } catch (err: any) {
       setError(

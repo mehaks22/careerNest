@@ -13,14 +13,17 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // 1. Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
 
     try {
-      // Send both `email` and `username` keys to satisfy Spring Boot DTO constraints
-      const response = await axios.post("http://localhost:8080/auth/login", {
+      // 2. Updated to use API_BASE_URL instead of hardcoded localhost
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email: email,
         username: email,
         password: password,
