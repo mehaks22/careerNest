@@ -23,7 +23,7 @@ const JobList: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get(`${API_BASE_URL}/api/jobs`)
+      .get(`${API_BASE_URL}/jobs`)
       .then((res) => {
         setJobs(res.data);
         setLoading(false);
