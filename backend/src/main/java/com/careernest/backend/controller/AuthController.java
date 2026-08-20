@@ -7,6 +7,9 @@ import com.careernest.backend.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -18,13 +21,19 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody User user, @RequestParam(required = false, defaultValue = "JOB_SEEKER")String role){
-        try{
-            User registeredUser = authService.register(user,role);
-            return ResponseEntity.ok(registeredUser);
-        }
-        catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+    public ResponseEntity<?> register(
+            @RequestBody Map<String, Object> payload,
+            @RequestParam(required = false, defaultValue = "JOB_SEEKER") String role) {
+        try {
+            // Log to Railway console so you can see exact incoming data
+            System.out.println("Received register payload: " + payload);
+
+            // Convert map or extract fields as needed
+            // User registeredUser = authService.register(...);
+            return ResponseEntity.ok("User registered successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
 

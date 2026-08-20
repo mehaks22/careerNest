@@ -37,10 +37,10 @@ const Signup: React.FC = () => {
     const { role, ...userData } = formData
 
     try {
-      // Send user object in body, role as query param
+      // Pass the entire formData in the POST request body without URL query params
       await axios.post(
-        `${API_BASE_URL}/auth/register?role=${encodeURIComponent(role)}`,
-        userData,
+        `${API_BASE_URL}/auth/register`,
+        formData,
         {
           headers: {
             "Content-Type": "application/json",
@@ -48,7 +48,8 @@ const Signup: React.FC = () => {
         }
       )
       navigate("/login")
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error("Signup failed:", err.response?.data || err)
 
       let errorMessage = "Registration failed. Please check your inputs."
