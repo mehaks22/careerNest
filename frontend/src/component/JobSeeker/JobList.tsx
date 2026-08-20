@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
-// 1. Updated interface to include all potential owner key variations
 interface Job {
   id?: string;
   _id?: string;
@@ -14,6 +13,7 @@ interface Job {
   employerId?: string;
   employerEmail?: string;
   userId?: string;
+  email?: string;
 }
 
 const JobList: React.FC = () => {
@@ -31,9 +31,6 @@ const JobList: React.FC = () => {
     axios
       .get(`${API_BASE_URL}/jobs`)
       .then((res) => {
-        console.log("Logged In User Email:", userEmail);
-        console.log("Logged In User ID:", userId);
-        console.log("Fetched Jobs from Backend:", res.data);
         setJobs(res.data);
         setLoading(false);
       })
@@ -41,22 +38,20 @@ const JobList: React.FC = () => {
         console.error("Failed to fetch jobs:", err);
         setLoading(false);
       });
-  }, [API_BASE_URL, userEmail, userId]);
+  }, [API_BASE_URL]);
 
-  // 2. Multi-key flexible filter matching email or ID
   const employerJobs = jobs.filter((job) => {
-    const jobOwnerEmail = job.postedBy || job.employerEmail;
-    const jobOwnerId = job.employerId || job.userId;
+    const currentEmail = (userEmail || "").trim().toLowerCase();
 
-    const matchesEmail =
-      userEmail && jobOwnerEmail
-        ? String(jobOwnerEmail).toLowerCase() === String(userEmail).toLowerCase()
-        : false;
+    // Extract all possible email fields from backend job object
+    const jobEmail = (job.postedBy || job.employerEmail || job.email || "").trim().toLowerCase();
 
-    const matchesId =
-      userId && jobOwnerId
-        ? String(jobOwnerId) === String(userId)
-        : false;
+    // Extract all possible ID fields
+    const jobId = String(job.employerId || job.userId || job.postedBy || "");
+    const currentId = String(userId || "");
+
+    const matchesEmail = currentEmail !== "" && jobEmail === currentEmail;
+    const matchesId = currentId !== "null" && currentId !== "" && jobId === currentId;
 
     return matchesEmail || matchesId;
   });
@@ -64,8 +59,6 @@ const JobList: React.FC = () => {
   return (
     <div style={{ backgroundColor: "#f3f4f6", minHeight: "100vh", padding: "2rem 1rem" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-
-        {/* EMPLOYER VIEW */}
         {userRole === "EMPLOYER" ? (
           <div>
             <div
@@ -130,20 +123,22 @@ const JobList: React.FC = () => {
                           {job.description}
                         </p>
                       </div>
-                      <Link
-                        to={`/job/${jobId}`}
-                        style={{
-                          backgroundColor: "#6366f1",
-                          color: "#ffffff",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        View Details
-                      </Link>
+                      {jobId && (
+                        <Link
+                          to={`/job/${jobId}`}
+                          style={{
+                            backgroundColor: "#6366f1",
+                            color: "#ffffff",
+                            padding: "0.5rem 1rem",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                            fontWeight: "500",
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          View Details
+                        </Link>
+                      )}
                     </div>
                   );
                 })}
@@ -180,7 +175,6 @@ const JobList: React.FC = () => {
             )}
           </div>
         ) : (
-          /* JOB SEEKER VIEW */
           <div>
             <h1 style={{ fontSize: "1.875rem", fontWeight: "800", color: "#111827", marginBottom: "1.5rem" }}>
               Available Job Opportunities
@@ -216,20 +210,22 @@ const JobList: React.FC = () => {
                           {job.description}
                         </p>
                       </div>
-                      <Link
-                        to={`/job/${jobId}`}
-                        style={{
-                          backgroundColor: "#6366f1",
-                          color: "#ffffff",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        View Details
-                      </Link>
+                      {jobId && (
+                        <Link
+                          to={`/job/${jobId}`}
+                          style={{
+                            backgroundColor: "#6366f1",
+                            color: "#ffffff",
+                            padding: "0.5rem 1rem",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                            fontWeight: "500",
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          View Details
+                        </Link>
+                      )}
                     </div>
                   );
                 })}
@@ -248,7 +244,6 @@ const JobList: React.FC = () => {
             )}
           </div>
         )}
-
       </div>
     </div>
   );

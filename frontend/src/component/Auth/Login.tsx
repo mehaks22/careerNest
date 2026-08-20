@@ -13,7 +13,6 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,29 +34,40 @@ const Login: React.FC = () => {
         resData.accessToken ||
         resData.data?.token
 
-      // Normalize user object for both EMPLOYER and JOB_SEEKER
       const rawUser = resData.user || resData.userDto || resData.data?.user || resData
+
+      // Extract ID checking all possible backend key variations
+      const extractedUserId =
+        rawUser.id ||
+        rawUser._id ||
+        rawUser.userId ||
+        resData.id ||
+        resData._id ||
+        resData.userId
 
       const rawRole = rawUser.role || resData.role || "JOB_SEEKER"
       const normalizedRole = String(rawRole).toUpperCase()
 
       const user = {
-        id: rawUser.id || rawUser.userId || resData.id || resData.userId,
+        id: extractedUserId,
         email: rawUser.email || email,
         role: normalizedRole,
         username: rawUser.username || rawUser.name || rawUser.email || email,
       }
 
-      // Dispatch normalized state
       dispatch(login({ token, user }))
 
-      // Save values to localStorage so JobList.tsx can read them immediately
       localStorage.setItem("userRole", user.role)
       localStorage.setItem("userEmail", user.email)
-      if (user.id) localStorage.setItem("userId", String(user.id)) // 👈 Added userId saving
-      if (token) localStorage.setItem("token", token)
 
-      // Redirect both roles appropriately
+      if (extractedUserId) {
+        localStorage.setItem("userId", String(extractedUserId))
+      }
+
+      if (token) {
+        localStorage.setItem("token", token)
+      }
+
       navigate("/jobs")
     } catch (err: any) {
       console.error("Login attempt failed:", err.response?.data)
@@ -96,7 +106,6 @@ const Login: React.FC = () => {
           textAlign: "center",
         }}
       >
-        {/* Brand Icon & Heading */}
         <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>💼</div>
         <h1
           style={{
@@ -112,7 +121,6 @@ const Login: React.FC = () => {
           Welcome back! Please enter your details.
         </p>
 
-        {/* Error Alert */}
         {error && (
           <div
             style={{
@@ -129,7 +137,6 @@ const Login: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} style={{ textAlign: "left" }}>
-          {/* Email / Username Input */}
           <div style={{ marginBottom: "1.25rem" }}>
             <label
               style={{
@@ -160,7 +167,6 @@ const Login: React.FC = () => {
             />
           </div>
 
-          {/* Password Input */}
           <div style={{ marginBottom: "1.5rem" }}>
             <label
               style={{
@@ -191,7 +197,6 @@ const Login: React.FC = () => {
             />
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
@@ -213,7 +218,6 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        {/* Footer Link */}
         <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: 0 }}>
           Don't have an account?{" "}
           <Link
