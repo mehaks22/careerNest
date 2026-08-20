@@ -5,13 +5,23 @@ import axios from "axios"
 import type { RootState } from "../../redux/store"
 import { setSelectedJob } from "../../redux/slices/jobSlice"
 
+// 1. Define User & Job interfaces to fix TypeScript build errors
+interface User {
+  id?: string
+  _id?: string
+  email?: string
+  role?: string
+}
+
 interface Job {
-  id: string
+  id?: string
   _id?: string
   title: string
   description: string
   location: string
   salary: string
+  employerName?: string
+  postedDate?: string
   skills?: string[]
 }
 
@@ -19,7 +29,13 @@ const JobList: React.FC = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const { token, user } = useSelector((state: RootState) => state.auth)
+  // 2. Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
+  const { token, user } = useSelector((state: RootState) => state.auth) as {
+    token: string | null
+    user: User | null
+  }
 
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,7 +53,7 @@ const JobList: React.FC = () => {
         if (token) headers["Authorization"] = `Bearer ${token}`
         if (userId) headers["userId"] = String(userId)
 
-        const response = await axios.get("http://localhost:8080/jobs", { headers })
+        const response = await axios.get(`${API_BASE_URL}/jobs`, { headers })
 
         if (Array.isArray(response.data)) {
           setJobs(response.data)
@@ -53,7 +69,7 @@ const JobList: React.FC = () => {
     }
 
     fetchJobs()
-  }, [token, user])
+  }, [token, user, API_BASE_URL])
 
   const handleSelectJob = (job: Job) => {
     dispatch(setSelectedJob(job))
@@ -160,7 +176,7 @@ const JobList: React.FC = () => {
                     fontSize: "0.925rem",
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
-                    WebkitBoxOrient: "orient",
+                    WebkitBoxOrient: "vertical" as const,
                     overflow: "hidden",
                     margin: 0,
                   }}

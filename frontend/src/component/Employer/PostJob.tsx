@@ -4,10 +4,22 @@ import { useSelector } from "react-redux"
 import axios from "axios"
 import type { RootState } from "../../redux/store"
 
+// 1. Define the User interface locally to fix TypeScript errors
+interface User {
+  id?: string
+  _id?: string
+  email: string
+  role: string
+  name?: string
+  username?: string
+}
+
 const PostJob: React.FC = () => {
   const navigate = useNavigate()
   const token = useSelector((state: RootState) => state.auth?.token)
-  const user = useSelector((state: RootState) => state.auth?.user)
+
+  // 2. Explicitly cast user to the User interface
+  const user = useSelector((state: RootState) => state.auth?.user) as User | null
 
   const [formData, setFormData] = useState({
     title: "",
@@ -48,7 +60,10 @@ const PostJob: React.FC = () => {
         skills: formData.skills.split(",").map((s) => s.trim()),
       }
 
-      await axios.post("http://localhost:8080/jobs", payload, {
+      // 3. Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
+      await axios.post(`${API_BASE_URL}/jobs`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

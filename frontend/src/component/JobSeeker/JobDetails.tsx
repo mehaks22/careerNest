@@ -5,18 +5,42 @@ import axios from "axios"
 import type { RootState } from "../../redux/store"
 import { setSelectedJob } from "../../redux/slices/jobSlice"
 
+// 1. Define User & Job interfaces to clear TypeScript build errors
+interface User {
+  id?: string
+  _id?: string
+  email?: string
+  role?: string
+  name?: string
+  username?: string
+}
+
+interface Job {
+  id?: string
+  _id?: string
+  title: string
+  description: string
+  location: string
+  salary: string
+  employerId?: string
+  skills?: string[]
+}
+
 const JobDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  // 1. Get user & auth state from Redux
-  const reduxJob = useSelector((state: RootState) => state.jobs?.selectedJob)
-  const user = useSelector((state: RootState) => state.auth?.user)
+  // 2. Dynamic Base URL: Uses VITE_API_BASE_URL on production/Vercel and falls back to localhost locally
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+
+  // 3. Get user & auth state from Redux with proper typing
+  const reduxJob = useSelector((state: RootState) => state.jobs?.selectedJob) as Job | null
+  const user = useSelector((state: RootState) => state.auth?.user) as User | null
   const token = useSelector((state: RootState) => state.auth?.token)
   const isAuthenticated = useSelector((state: RootState) => state.auth?.isAuthenticated)
 
-  const [job, setJob] = useState<any>(reduxJob)
+  const [job, setJob] = useState<Job | null>(reduxJob)
   const [loading, setLoading] = useState<boolean>(!reduxJob)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,7 +58,7 @@ const JobDetails: React.FC = () => {
     if (!job && id) {
       setLoading(true)
       axios
-        .get(`http://localhost:8080/jobs/${id}`)
+        .get(`${API_BASE_URL}/jobs/${id}`)
         .then((res) => {
           setJob(res.data)
           dispatch(setSelectedJob(res.data))
@@ -46,16 +70,18 @@ const JobDetails: React.FC = () => {
           setLoading(false)
         })
     }
-  }, [id, job, dispatch])
+  }, [id, job, dispatch, API_BASE_URL])
 
-  // Check if user has already applied
+  // Check if user has already applied safely with optional chaining
   useEffect(() => {
     if (job && user) {
       const jobId = job.id || job._id
-      const userId = user.id || user._id
+      const userId = user?.id || user?._id
+
+      if (!userId || !jobId) return
 
       axios
-        .get(`http://localhost:8080/applications/job/${jobId}`)
+        .get(`${API_BASE_URL}/applications/job/${jobId}`)
         .then((res) => {
           if (Array.isArray(res.data)) {
             const alreadyApplied = res.data.some(
@@ -68,7 +94,7 @@ const JobDetails: React.FC = () => {
           console.error("Error checking application status:", err)
         })
     }
-  }, [job, user])
+  }, [job, user, API_BASE_URL])
 
   // Handle clicking "Apply Now" button
   const handleApplyClick = () => {
@@ -90,17 +116,23 @@ const JobDetails: React.FC = () => {
     setApplyError("")
 
     try {
-      const jobId = job.id || job._id
-      const userId = user.id || user._id
+      const jobId = job?.id || job?._id
+      const userId = user?.id || user?._id
+
+      if (!userId || !jobId) {
+        setApplyError("Invalid session or job selection.")
+        setApplying(false)
+        return
+      }
 
       // Build Multipart FormData payload
       const formData = new FormData()
       formData.append("resume", resumeFile)
       formData.append("coverLetter", coverLetter)
 
-      // Send via Axios
+      // Send via Axios to production backend
       await axios.post(
-        `http://localhost:8080/applications?jobId=${jobId}`,
+        `${API_BASE_URL}/applications?jobId=${jobId}`,
         formData,
         {
           headers: {
@@ -111,7 +143,7 @@ const JobDetails: React.FC = () => {
         }
       )
 
-      // Show success banner (do NOT trigger hasApplied on instant submission)
+      // Show success banner
       setAppliedSuccess(true)
       setShowApplyForm(false)
       setResumeFile(null)
